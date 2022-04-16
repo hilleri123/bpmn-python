@@ -1,5 +1,7 @@
 # update by k.h.
 - Change codes for networkX>=2.4
+- install
+    - pip3 install git+https://github.com/KanHatakeyama/bpmn-python.git
 
 # bpmn-python
 Project for creating a Python library that allows to import/export BPMN diagram (as an XML file) and provides a simple visualization capabilities
