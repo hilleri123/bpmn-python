@@ -52,19 +52,24 @@ def add_node_info_to_diagram_graph(order, node_type, activity, process_id, bpmn_
     :param bpmn_diagram:
     """
     if node_type == consts.Consts.start_event:
-        bpmn_diagram.add_start_event_to_diagram(process_id, start_event_name=activity, node_id=order)
+        bpmn_diagram.add_start_event_to_diagram(
+            process_id, start_event_name=activity, node_id=order)
     elif node_type == consts.Consts.subprocess:
-        bpmn_diagram.add_subprocess_to_diagram(process_id, subprocess_name=activity, node_id=order)
+        bpmn_diagram.add_subprocess_to_diagram(
+            process_id, subprocess_name=activity, node_id=order)
     elif node_type == consts.Consts.end_event:
         bpmn_diagram.add_end_event_to_diagram(process_id, node_id=order)
     elif node_type == consts.Consts.inclusive_gateway:
-        bpmn_diagram.add_inclusive_gateway_to_diagram(process_id, node_id=order)
+        bpmn_diagram.add_inclusive_gateway_to_diagram(
+            process_id, node_id=order)
     elif node_type == consts.Consts.exclusive_gateway:
-        bpmn_diagram.add_exclusive_gateway_to_diagram(process_id, node_id=order)
+        bpmn_diagram.add_exclusive_gateway_to_diagram(
+            process_id, node_id=order)
     elif node_type == consts.Consts.parallel_gateway:
         bpmn_diagram.add_parallel_gateway_to_diagram(process_id, node_id=order)
     else:
-        bpmn_diagram.add_task_to_diagram(process_id, task_name=activity, node_id=order)
+        bpmn_diagram.add_task_to_diagram(
+            process_id, task_name=activity, node_id=order)
 
 
 def import_nodes_info(process_dict, bpmn_diagram):
@@ -77,7 +82,8 @@ def import_nodes_info(process_dict, bpmn_diagram):
         node_type = get_node_type(order, csv_line_dict)
         activity = process_dict[order][consts.Consts.csv_activity]
         process_id = default_process_id
-        add_node_info_to_diagram_graph(order, node_type, activity, process_id, bpmn_diagram)
+        add_node_info_to_diagram_graph(
+            order, node_type, activity, process_id, bpmn_diagram)
 
 
 def remove_white_spaces_in_orders(process_dict):
@@ -181,9 +187,11 @@ def get_possible_successor_present_in_node_ids_or_raise_excp(poissible_successor
     :param nodes_ids:
     :return:
     """
-    possible_successor_set = get_possible_successors_set_present_in_node_ids(poissible_successors_node_id, nodes_ids)
+    possible_successor_set = get_possible_successors_set_present_in_node_ids(
+        poissible_successors_node_id, nodes_ids)
     if len(possible_successor_set) != 1:
-        raise bpmn_exception.BpmnPythonError("Some error in program - there should be exactly one found successor.")
+        raise bpmn_exception.BpmnPythonError(
+            "Some error in program - there should be exactly one found successor.")
     else:
         return possible_successor_set.pop()
 
@@ -197,7 +205,8 @@ def get_all_split_successors(node_id, nodes_ids):
     """
     result = re.match(regex_pa_trailing_number, node_id)
     if not result:
-        raise bpmn_exception.BpmnPythonError("Something wrong in program - look for " + node_id)
+        raise bpmn_exception.BpmnPythonError(
+            "Something wrong in program - look for " + node_id)
     trailing_number = result.group(2)
     prefix = result.group(1)
     new_trailing_number = str(int(trailing_number) + 1)
@@ -261,9 +270,11 @@ def add_outgoing_flow(node_id, successor_node_id, bpmn_diagram):
     :param successor_node_id:
     :param bpmn_diagram:
     """
-    if bpmn_diagram.diagram_graph.node[node_id].get(consts.Consts.outgoing_flow) is None:
-        bpmn_diagram.diagram_graph.node[node_id][consts.Consts.outgoing_flow] = []
-    bpmn_diagram.diagram_graph.node[node_id][consts.Consts.outgoing_flow].append(get_flow_id(node_id, successor_node_id))
+    if bpmn_diagram.diagram_graph.nodes[node_id].get(consts.Consts.outgoing_flow) is None:
+        bpmn_diagram.diagram_graph.nodes[node_id][consts.Consts.outgoing_flow] = [
+        ]
+    bpmn_diagram.diagram_graph.nodes[node_id][consts.Consts.outgoing_flow].append(
+        get_flow_id(node_id, successor_node_id))
 
 
 def add_incoming_flow(node_id, from_node_id, bpmn_diagram):
@@ -273,9 +284,11 @@ def add_incoming_flow(node_id, from_node_id, bpmn_diagram):
     :param from_node_id:
     :param bpmn_diagram:
     """
-    if bpmn_diagram.diagram_graph.node[node_id].get(consts.Consts.incoming_flow) is None:
-        bpmn_diagram.diagram_graph.node[node_id][consts.Consts.incoming_flow] = []
-    bpmn_diagram.diagram_graph.node[node_id][consts.Consts.incoming_flow].append(get_flow_id(from_node_id, node_id))
+    if bpmn_diagram.diagram_graph.nodes[node_id].get(consts.Consts.incoming_flow) is None:
+        bpmn_diagram.diagram_graph.nodes[node_id][consts.Consts.incoming_flow] = [
+        ]
+    bpmn_diagram.diagram_graph.nodes[node_id][consts.Consts.incoming_flow].append(
+        get_flow_id(from_node_id, node_id))
 
 
 def get_connection_condition_if_present(to_node_id, process_dict):
@@ -336,7 +349,8 @@ def add_connection(from_node_id, to_node_id, process_dict, diagram_graph, sequen
     """
     add_outgoing_flow(from_node_id, to_node_id, diagram_graph)
     add_incoming_flow(to_node_id, from_node_id, diagram_graph)
-    add_edge(from_node_id, to_node_id, process_dict, diagram_graph, sequence_flows)
+    add_edge(from_node_id, to_node_id, process_dict,
+             diagram_graph, sequence_flows)
 
 
 def get_node_conditions(split_successors, process_dict):
@@ -348,7 +362,8 @@ def get_node_conditions(split_successors, process_dict):
     """
     conditions = []
     for succ in split_successors:
-        conditions.append(process_dict[succ][consts.Consts.csv_condition].strip())
+        conditions.append(process_dict[succ]
+                          [consts.Consts.csv_condition].strip())
     return conditions
 
 
@@ -390,7 +405,8 @@ def get_gateway_type(node_id_to_add_after, nodes_ids, process_dict):
     :param process_dict:
     :return:
     """
-    split_successors = get_all_split_successors(node_id_to_add_after, nodes_ids)
+    split_successors = get_all_split_successors(
+        node_id_to_add_after, nodes_ids)
     successors_conditions = get_node_conditions(split_successors, process_dict)
     if len(split_successors) == 2:
         if yes_no_conditions(successors_conditions) or sth_else_conditions(successors_conditions):
@@ -411,9 +427,11 @@ def add_split_gateway(node_id_to_add_after, nodes_ids, process_dict, diagram_gra
     """
     split_gateway_id = node_id_to_add_after + "_split"
     process_id = default_process_id
-    gateway_type = get_gateway_type(node_id_to_add_after, nodes_ids, process_dict)
+    gateway_type = get_gateway_type(
+        node_id_to_add_after, nodes_ids, process_dict)
     activity = ""
-    add_node_info_to_diagram_graph(split_gateway_id, gateway_type, activity, process_id, diagram_graph)
+    add_node_info_to_diagram_graph(
+        split_gateway_id, gateway_type, activity, process_id, diagram_graph)
     return split_gateway_id
 
 
@@ -429,11 +447,12 @@ def get_merge_node_type(merge_successor_id, bpmn_diagram):
         trailing_number = result.group(2)
         prev_prev_number = int(trailing_number) - 2
         if prev_prev_number < 0:
-            raise bpmn_exception.BpmnPythonError("Something wrong in csv file syntax - look for " + merge_successor_id)
+            raise bpmn_exception.BpmnPythonError(
+                "Something wrong in csv file syntax - look for " + merge_successor_id)
         prefix = result.group(1)
         split_node_id = prefix + str(prev_prev_number) + "_split"
         if bool(bpmn_diagram.diagram_graph.has_node(split_node_id)):
-            node_type = bpmn_diagram.diagram_graph.node[split_node_id][consts.Consts.type]
+            node_type = bpmn_diagram.diagram_graph.nodes[split_node_id][consts.Consts.type]
             if bool(node_type):
                 return node_type
         return consts.Consts.inclusive_gateway
@@ -455,7 +474,8 @@ def add_merge_gateway_if_not_exists(merge_successor_id, bpmn_diagram):
         process_id = default_process_id
         gateway_type = get_merge_node_type(merge_successor_id, bpmn_diagram)
         activity = ""
-        add_node_info_to_diagram_graph(merge_gateway_id, gateway_type, activity, process_id, bpmn_diagram)
+        add_node_info_to_diagram_graph(
+            merge_gateway_id, gateway_type, activity, process_id, bpmn_diagram)
         return merge_gateway_id, just_created
 
 
@@ -473,26 +493,36 @@ def fill_graph_connections(process_dict, bpmn_diagram, sequence_flows):
         if is_node_the_end_event(node_id, process_dict):
             pass
         elif is_there_sequence_continuation(node_id, nodes_ids):
-            possible_sequence_successors = get_possible_sequence_continuation_successor(node_id)
+            possible_sequence_successors = get_possible_sequence_continuation_successor(
+                node_id)
             successor_node_id = get_possible_successor_present_in_node_ids_or_raise_excp(possible_sequence_successors,
                                                                                          nodes_ids)
-            add_connection(node_id, successor_node_id, process_dict, bpmn_diagram, sequence_flows)
+            add_connection(node_id, successor_node_id,
+                           process_dict, bpmn_diagram, sequence_flows)
         elif is_there_split_continuation(node_id, nodes_ids):
-            split_gateway_id = add_split_gateway(node_id, nodes_ids, process_dict, bpmn_diagram)
-            add_connection(node_id, split_gateway_id, process_dict, bpmn_diagram, sequence_flows)
+            split_gateway_id = add_split_gateway(
+                node_id, nodes_ids, process_dict, bpmn_diagram)
+            add_connection(node_id, split_gateway_id,
+                           process_dict, bpmn_diagram, sequence_flows)
             for successor_node_id in get_all_split_successors(node_id, nodes_ids):
-                add_connection(split_gateway_id, successor_node_id, process_dict, bpmn_diagram, sequence_flows)
+                add_connection(split_gateway_id, successor_node_id,
+                               process_dict, bpmn_diagram, sequence_flows)
             pass
         elif is_there_merge_continuation(node_id, nodes_ids):
-            possible_merge_successors = get_possible_merge_continuation_successors(node_id)
+            possible_merge_successors = get_possible_merge_continuation_successors(
+                node_id)
             merge_successor_id = get_possible_successor_present_in_node_ids_or_raise_excp(possible_merge_successors,
                                                                                           nodes_ids)
-            merge_gateway_id, just_created = add_merge_gateway_if_not_exists(merge_successor_id, bpmn_diagram)
+            merge_gateway_id, just_created = add_merge_gateway_if_not_exists(
+                merge_successor_id, bpmn_diagram)
             if just_created:
-                add_connection(merge_gateway_id, merge_successor_id, process_dict, bpmn_diagram, sequence_flows)
-            add_connection(node_id, merge_gateway_id, process_dict, bpmn_diagram, sequence_flows)
+                add_connection(merge_gateway_id, merge_successor_id,
+                               process_dict, bpmn_diagram, sequence_flows)
+            add_connection(node_id, merge_gateway_id,
+                           process_dict, bpmn_diagram, sequence_flows)
         else:
-            raise bpmn_exception.BpmnPythonError("Something wrong in csv file syntax - look for " + node_id)
+            raise bpmn_exception.BpmnPythonError(
+                "Something wrong in csv file syntax - look for " + node_id)
 
 
 def remove_outgoing_connection(base_node, bpmn_diagram, sequence_flows):
@@ -503,9 +533,10 @@ def remove_outgoing_connection(base_node, bpmn_diagram, sequence_flows):
     :param sequence_flows:
     :return:
     """
-    outgoing_flow_id = bpmn_diagram.diagram_graph.node[base_node][consts.Consts.outgoing_flow][0]
+    outgoing_flow_id = bpmn_diagram.diagram_graph.nodes[base_node][consts.Consts.outgoing_flow][0]
     neighbour_node = sequence_flows[outgoing_flow_id][consts.Consts.target_ref]
-    bpmn_diagram.diagram_graph.node[neighbour_node][consts.Consts.incoming_flow].remove(outgoing_flow_id)
+    bpmn_diagram.diagram_graph.nodes[neighbour_node][consts.Consts.incoming_flow].remove(
+        outgoing_flow_id)
     del sequence_flows[outgoing_flow_id]
     bpmn_diagram.diagram_graph.remove_edge(base_node, neighbour_node)
     return neighbour_node
@@ -519,9 +550,10 @@ def remove_incoming_connection(base_node, bpmn_diagram, sequence_flows):
     :param sequence_flows:
     :return:
     """
-    incoming_flow_id = bpmn_diagram.diagram_graph.node[base_node][consts.Consts.incoming_flow][0]
+    incoming_flow_id = bpmn_diagram.diagram_graph.nodes[base_node][consts.Consts.incoming_flow][0]
     neighbour_node = sequence_flows[incoming_flow_id][consts.Consts.source_ref]
-    bpmn_diagram.diagram_graph.node[neighbour_node][consts.Consts.outgoing_flow].remove(incoming_flow_id)
+    bpmn_diagram.diagram_graph.nodes[neighbour_node][consts.Consts.outgoing_flow].remove(
+        incoming_flow_id)
     del sequence_flows[incoming_flow_id]
     bpmn_diagram.diagram_graph.remove_edge(neighbour_node, base_node)
     return neighbour_node
@@ -536,8 +568,10 @@ def remove_node(node_id_to_remove, process_dict, bpmn_diagram, sequence_flows):
     :param sequence_flows:
     :return:
     """
-    new_source_node = remove_incoming_connection(node_id_to_remove, bpmn_diagram, sequence_flows)
-    new_target_node = remove_outgoing_connection(node_id_to_remove, bpmn_diagram, sequence_flows)
+    new_source_node = remove_incoming_connection(
+        node_id_to_remove, bpmn_diagram, sequence_flows)
+    new_target_node = remove_outgoing_connection(
+        node_id_to_remove, bpmn_diagram, sequence_flows)
     bpmn_diagram.diagram_graph.remove_node(node_id_to_remove)
     process_dict.pop(node_id_to_remove, None)
     # add new connection
@@ -557,8 +591,10 @@ def remove_unnecessary_merge_gateways(process_dict, bpmn_diagram, sequence_flows
                             consts.Consts.parallel_gateway]:
             if len(node[1].get(consts.Consts.incoming_flow)) < 2 \
                     and len(node[1].get(consts.Consts.outgoing_flow)) < 2:
-                new_source_node, new_target_node = remove_node(node[0], process_dict, bpmn_diagram, sequence_flows)
-                add_connection(new_source_node, new_target_node, process_dict, bpmn_diagram, sequence_flows)
+                new_source_node, new_target_node = remove_node(
+                    node[0], process_dict, bpmn_diagram, sequence_flows)
+                add_connection(new_source_node, new_target_node,
+                               process_dict, bpmn_diagram, sequence_flows)
 
 
 def remove_goto_nodes(process_dict, diagram_graph, sequence_flows):
@@ -570,9 +606,12 @@ def remove_goto_nodes(process_dict, diagram_graph, sequence_flows):
     """
     for order, csv_line_dict in copy.deepcopy(process_dict).items():
         if csv_line_dict[consts.Consts.csv_activity].lower().startswith("goto"):
-            source_node, _ = remove_node(order, process_dict, diagram_graph, sequence_flows)
-            target_node = csv_line_dict[consts.Consts.csv_activity].strip().split()[1]
-            add_connection(source_node, target_node, process_dict, diagram_graph, sequence_flows)
+            source_node, _ = remove_node(
+                order, process_dict, diagram_graph, sequence_flows)
+            target_node = csv_line_dict[consts.Consts.csv_activity].strip().split()[
+                1]
+            add_connection(source_node, target_node, process_dict,
+                           diagram_graph, sequence_flows)
 
 
 class BpmnDiagramGraphCSVImport(object):
@@ -593,14 +632,20 @@ class BpmnDiagramGraphCSVImport(object):
         diagram_attributes = bpmn_diagram.diagram_attributes
         plane_attributes = bpmn_diagram.plane_attributes
 
-        process_dict = BpmnDiagramGraphCSVImport.import_csv_file_as_dict(filepath)
+        process_dict = BpmnDiagramGraphCSVImport.import_csv_file_as_dict(
+            filepath)
 
-        BpmnDiagramGraphCSVImport.populate_diagram_elements_dict(diagram_attributes)
-        BpmnDiagramGraphCSVImport.populate_process_elements_dict(process_elements_dict, process_dict)
-        BpmnDiagramGraphCSVImport.populate_plane_elements_dict(plane_attributes)
+        BpmnDiagramGraphCSVImport.populate_diagram_elements_dict(
+            diagram_attributes)
+        BpmnDiagramGraphCSVImport.populate_process_elements_dict(
+            process_elements_dict, process_dict)
+        BpmnDiagramGraphCSVImport.populate_plane_elements_dict(
+            plane_attributes)
 
-        BpmnDiagramGraphCSVImport.import_nodes(process_dict, bpmn_diagram, sequence_flows)
-        BpmnDiagramGraphCSVImport.representation_adjustment(process_dict, bpmn_diagram, sequence_flows)
+        BpmnDiagramGraphCSVImport.import_nodes(
+            process_dict, bpmn_diagram, sequence_flows)
+        BpmnDiagramGraphCSVImport.representation_adjustment(
+            process_dict, bpmn_diagram, sequence_flows)
 
     @staticmethod
     def import_csv_file_as_dict(filepath):
@@ -609,7 +654,8 @@ class BpmnDiagramGraphCSVImport(object):
         :param filepath:
         :return:
         """
-        process_dict = pd.read_csv(filepath, index_col=0).fillna("").to_dict('index')
+        process_dict = pd.read_csv(
+            filepath, index_col=0).fillna("").to_dict('index')
         remove_white_spaces_in_orders(process_dict)
         return process_dict
 
@@ -692,4 +738,5 @@ class BpmnDiagramGraphCSVImport(object):
         """
         BpmnDiagramGraphCSVImport.legacy_adjustment(diagram_graph)
         remove_goto_nodes(process_dict, diagram_graph, sequence_flows)
-        remove_unnecessary_merge_gateways(process_dict, diagram_graph, sequence_flows)
+        remove_unnecessary_merge_gateways(
+            process_dict, diagram_graph, sequence_flows)
