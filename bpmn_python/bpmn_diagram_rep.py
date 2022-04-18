@@ -47,7 +47,8 @@ class BpmnDiagramGraph(object):
         """
         Default constructor, initializes object fields with new instances.
         """
-        self.diagram_graph = nx.Graph()
+        #self.diagram_graph = nx.Graph()
+        self.diagram_graph = nx.DiGraph()
         self.sequence_flows = {}
         self.process_elements = {}
         self.diagram_attributes = {}
