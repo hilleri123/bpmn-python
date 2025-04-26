@@ -15,7 +15,7 @@ def read(fname):
 
 setup(
     name="bpmn_python",
-    version="0.0.21kh",
+    version="0.0.22",
     author="Izbela Smietana, Krzysztof Honkisz",
     # author_email = "honkiszkrzystof@gmail.com",
     description=("Python library that allows to import/export BPMN diagram (as an XML file) and provides a simple "
@@ -24,7 +24,7 @@ setup(
     keywords=["bpmn", "xml"],
     url="https://github.com/KrzyHonk/bpmn-python",
     download_url="https://github.com/KrzyHonk/bpmn-python/tarball/0.0.19-SNAPSHOT",
-    python_requires='>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*',
+    python_requires='>=3.7',
     packages=find_packages(exclude=['docs', 'tests*']),
     install_requires=read('requirements.txt').split('\n'),
     long_description="%s\n%s" % (
@@ -35,7 +35,6 @@ setup(
     classifiers=[
         "License :: OSI Approved :: GNU General Public License (GPL)",
         "Programming Language :: Python",
-        "Programming Language :: Python :: 2",
         "Programming Language :: Python :: 3",
         "Topic :: Scientific/Engineering :: Information Analysis",
         "Topic :: Text Processing :: Markup :: XML"
