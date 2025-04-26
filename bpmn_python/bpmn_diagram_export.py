@@ -7,6 +7,7 @@ import os
 import xml.etree.cElementTree as eTree
 
 import bpmn_python.bpmn_python_consts as consts
+import bpmn_python.bpmn_diagram_layouter as layouter
 
 
 class BpmnDiagramGraphExport(object):
@@ -206,6 +207,7 @@ class BpmnDiagramGraphExport(object):
         root.set("typeLanguage", "http://www.w3.org/2001/XMLSchema")
         root.set("expressionLanguage", "http://www.w3.org/1999/XPath")
         root.set("xmlns:xsd", "http://www.w3.org/2001/XMLSchema")
+        root.set("id", "Definitions_" + "test")
 
         return root
 
@@ -422,6 +424,12 @@ class BpmnDiagramGraphExport(object):
         :param filename: string representing output file name,
         :param bpmn_diagram: BPMNDiagramGraph class instantion representing a BPMN process diagram.
         """
+        nodes_classification, flows_classification = layouter.generate_elements_clasification(bpmn_diagram)
+        sorted_nodes_with_classification, backward_flows = layouter.topological_sort(bpmn_diagram, nodes_classification)
+        grid = layouter.grid_layout(bpmn_diagram, sorted_nodes_with_classification)
+        layouter.set_coordinates_for_nodes(bpmn_diagram, grid)
+        layouter.set_flows_waypoints(bpmn_diagram)
+
         diagram_attributes = bpmn_diagram.diagram_attributes
         plane_attributes = bpmn_diagram.plane_attributes
         collaboration = bpmn_diagram.collaboration
@@ -511,7 +519,7 @@ class BpmnDiagramGraphExport(object):
         except OSError as exception:
             if exception.errno != errno.EEXIST:
                 raise
-        tree.write(directory + filename, encoding='utf-8', xml_declaration=True)
+        tree.write(os.path.join(directory, filename), encoding='utf-8', xml_declaration=True)
 
     @staticmethod
     def export_xml_file_no_di(directory, filename, bpmn_diagram):
