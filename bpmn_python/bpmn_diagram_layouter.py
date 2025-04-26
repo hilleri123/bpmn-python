@@ -394,34 +394,42 @@ def set_flows_waypoints(bpmn_graph):
     """
     # TODO hardcoded node center, better compute it with x,y coordinates and height/width
     # TODO get rid of string cast
+    delta = 15
+
     flows = bpmn_graph.get_flows()
     for flow in flows:
         source_node = bpmn_graph.get_node_by_id(flow[2][consts.Consts.source_ref])
         target_node = bpmn_graph.get_node_by_id(flow[2][consts.Consts.target_ref])
         source_type = source_node[1][consts.Consts.type]
         target_type = target_node[1][consts.Consts.type]
+
+        source_rw = float(source_node[1][consts.Consts.width]) / 2 
+        source_rh = float(source_node[1][consts.Consts.height]) / 2 
+        target_rw = float(source_node[1][consts.Consts.width]) / 2 
+        target_rh = float(source_node[1][consts.Consts.height]) / 2 
+        
         if source_type == consts.Consts.parallel_gateway or source_type == consts.Consts.inclusive_gateway or source_type == consts.Consts.exclusive_gateway:
-            flow[2][consts.Consts.waypoints] = [(str(int(source_node[1][consts.Consts.x]) + 50),
-                                                 str(int(source_node[1][consts.Consts.y]) + 50)),
-                                                (str(int(source_node[1][consts.Consts.x]) + 50),
-                                                 str(int(target_node[1][consts.Consts.y]) + 50)),
+            flow[2][consts.Consts.waypoints] = [(str(int(source_node[1][consts.Consts.x]) + source_rw),
+                                                 str(int(source_node[1][consts.Consts.y]) + source_rh)),
+                                                # (str(int(source_node[1][consts.Consts.x]) + source_rw + delta),
+                                                #  str(int(target_node[1][consts.Consts.y]) + target_rh)),
                                                 (str(int(target_node[1][consts.Consts.x])),
-                                                 str(int(target_node[1][consts.Consts.y]) + 50))]
+                                                 str(int(target_node[1][consts.Consts.y]) + target_rh))]
         elif source_node[1][consts.Consts.y] == target_node[1][consts.Consts.y]:
-            flow[2][consts.Consts.waypoints] = [(str(int(source_node[1][consts.Consts.x]) + 50),
-                                                 str(int(source_node[1][consts.Consts.y]) + 50)),
+            flow[2][consts.Consts.waypoints] = [(str(int(source_node[1][consts.Consts.x]) + source_rw),
+                                                 str(int(source_node[1][consts.Consts.y]) + source_rh)),
                                                 (str(int(target_node[1][consts.Consts.x])),
-                                                 str(int(target_node[1][consts.Consts.y]) + 50))]
+                                                 str(int(target_node[1][consts.Consts.y]) + target_rh))]
 
         elif target_type == consts.Consts.parallel_gateway or target_type == consts.Consts.inclusive_gateway or target_type == consts.Consts.exclusive_gateway:
-            flow[2][consts.Consts.waypoints] = [(str(int(source_node[1][consts.Consts.x]) + 50),
-                                                 str(int(source_node[1][consts.Consts.y]) + 50)),
-                                                (str(int(target_node[1][consts.Consts.x]) + 50),
-                                                 str(int(source_node[1][consts.Consts.y]) + 50)),
-                                                (str(int(target_node[1][consts.Consts.x]) + 50),
+            flow[2][consts.Consts.waypoints] = [(str(int(source_node[1][consts.Consts.x]) + source_rw),
+                                                 str(int(source_node[1][consts.Consts.y]) + source_rh)),
+                                                # (str(int(target_node[1][consts.Consts.x]) + target_rw - delta),
+                                                #  str(int(source_node[1][consts.Consts.y]) + source_rh)),
+                                                (str(int(target_node[1][consts.Consts.x]) + target_rw),
                                                  str(int(target_node[1][consts.Consts.y])))]
         else:
-            flow[2][consts.Consts.waypoints] = [(str(int(source_node[1][consts.Consts.x]) + 50),
-                                                 str(int(source_node[1][consts.Consts.y]) + 50)),
+            flow[2][consts.Consts.waypoints] = [(str(int(source_node[1][consts.Consts.x]) + source_rw),
+                                                 str(int(source_node[1][consts.Consts.y]) + source_rh)),
                                                 (str(int(target_node[1][consts.Consts.x])),
-                                                 str(int(target_node[1][consts.Consts.y]) + 50))]
+                                                 str(int(target_node[1][consts.Consts.y]) + target_rh))]
