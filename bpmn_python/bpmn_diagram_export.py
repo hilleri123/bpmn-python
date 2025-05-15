@@ -4,7 +4,9 @@ Package provides functionality for exporting graph representation to BPMN 2.0 XM
 """
 import errno
 import os
+import uuid
 import xml.etree.cElementTree as eTree
+from tqdm import tqdm
 
 import bpmn_python.bpmn_python_consts as consts
 import bpmn_python.bpmn_diagram_layouter as layouter
@@ -393,10 +395,15 @@ class BpmnDiagramGraphExport(object):
         if consts.Consts.condition_expression in params:
             condition_expression_params = params[consts.Consts.condition_expression]
             condition_expression = eTree.SubElement(output_flow, consts.Consts.condition_expression)
-            condition_expression.set(consts.Consts.id, condition_expression_params[consts.Consts.id])
-            condition_expression.set(consts.Consts.id, condition_expression_params[consts.Consts.id])
-            condition_expression.text = condition_expression_params[consts.Consts.condition_expression]
-            output_flow.set(consts.Consts.name, condition_expression_params[consts.Consts.condition_expression])
+            if isinstance(condition_expression_params, str):
+                # Создаем уникальный ID для выражения
+                condition_id = "Condition_" + str(uuid.uuid4())
+                condition_expression.set(consts.Consts.id, condition_id)
+                condition_expression.text = condition_expression_params
+            else:
+                # Исходное поведение для словарей
+                condition_expression.set(consts.Consts.id, condition_expression_params[consts.Consts.id])
+                condition_expression.text = condition_expression_params[consts.Consts.condition_expression]
 
     @staticmethod
     def export_flow_di_data(params, plane):
@@ -424,6 +431,7 @@ class BpmnDiagramGraphExport(object):
         :param filename: string representing output file name,
         :param bpmn_diagram: BPMNDiagramGraph class instantion representing a BPMN process diagram.
         """
+
         nodes_classification, flows_classification = layouter.generate_elements_clasification(bpmn_diagram)
         sorted_nodes_with_classification, backward_flows = layouter.topological_sort(bpmn_diagram, nodes_classification)
         grid = layouter.grid_layout(bpmn_diagram, sorted_nodes_with_classification)
@@ -479,7 +487,7 @@ class BpmnDiagramGraphExport(object):
                 bounds.set(consts.Consts.x, participant_attr[consts.Consts.x])
                 bounds.set(consts.Consts.y, participant_attr[consts.Consts.y])
 
-        for process_id in process_elements_dict:
+        for process_id in tqdm(process_elements_dict, desc="Экспорт BPMN диаграммы (обработка процессов)"):
             process_element_attr = process_elements_dict[process_id]
             process = BpmnDiagramGraphExport.export_process_element(definitions, process_id, process_element_attr)
             if consts.Consts.lane_set in process_element_attr:
@@ -502,7 +510,7 @@ class BpmnDiagramGraphExport(object):
 
         # Export DI data
         nodes = bpmn_diagram.get_nodes()
-        for node in nodes:
+        for node in tqdm(nodes, desc="Экспорт BPMN диаграммы (обработка процессов)"):
             node_id = node[0]
             params = node[1]
             BpmnDiagramGraphExport.export_node_di_data(node_id, params, plane)
@@ -519,6 +527,7 @@ class BpmnDiagramGraphExport(object):
         except OSError as exception:
             if exception.errno != errno.EEXIST:
                 raise
+        
         tree.write(os.path.join(directory, filename), encoding='utf-8', xml_declaration=True)
 
     @staticmethod

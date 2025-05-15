@@ -184,6 +184,17 @@ class BpmnDiagramGraph(object):
         for flow in tmp_flows:
             if flow[2][consts.Consts.id] == flow_id:
                 return flow
+            
+        # Если не нашли в рёбрах, проверяем потоки сообщений
+        if self.collaboration and "messageFlows" in self.collaboration:
+            for msg_flow_id, msg_flow in self.collaboration["messageFlows"].items():
+                if msg_flow_id == flow_id:
+                    source_ref = msg_flow[consts.Consts.source_ref]
+                    target_ref = msg_flow[consts.Consts.target_ref]
+                    # Создаем структуру, аналогичную обычному потоку
+                    return (source_ref, target_ref, msg_flow)
+                    
+        return None
 
     def get_flows_list_by_process_id(self, process_id):
         """
@@ -517,7 +528,7 @@ class BpmnDiagramGraph(object):
                                                                             node_id=node_id)
         return parallel_gateway_id, parallel_gateway
 
-    def add_sequence_flow_to_diagram(self, process_id, source_ref_id, target_ref_id, sequence_flow_name=""):
+    def add_sequence_flow_to_diagram(self, process_id, source_ref_id, target_ref_id, sequence_flow_name="", condition_expression=None):
         """
         Adds a SequenceFlow element to BPMN diagram.
         Requires that user passes a sourceRef and targetRef as parameters.
@@ -535,6 +546,9 @@ class BpmnDiagramGraph(object):
         self.sequence_flows[sequence_flow_id] = {consts.Consts.name: sequence_flow_name,
                                                  consts.Consts.source_ref: source_ref_id,
                                                  consts.Consts.target_ref: target_ref_id}
+        if condition_expression:
+            self.sequence_flows[sequence_flow_id]["conditionExpression"] = condition_expression
+
         self.diagram_graph.add_edge(source_ref_id, target_ref_id)
         flow = self.diagram_graph[source_ref_id][target_ref_id]
         flow[consts.Consts.id] = sequence_flow_id
@@ -542,6 +556,10 @@ class BpmnDiagramGraph(object):
         flow[consts.Consts.process] = process_id
         flow[consts.Consts.source_ref] = source_ref_id
         flow[consts.Consts.target_ref] = target_ref_id
+
+        if condition_expression:
+            flow["conditionExpression"] = condition_expression
+
         source_node = self.diagram_graph.nodes[source_ref_id]
         target_node = self.diagram_graph.nodes[target_ref_id]
         flow[consts.Consts.waypoints] = \
@@ -567,3 +585,91 @@ class BpmnDiagramGraph(object):
             output[node[0]] = (float(node[1][consts.Consts.x]),
                                float(node[1][consts.Consts.y]))
         return output
+
+
+
+    def add_pool_to_diagram(self, name, process_id, is_black_box=False, is_horizontal=True):
+        """
+        Добавляет элемент пула (participant) в BPMN диаграмму.
+        
+        :param name: строка, имя пула
+        :param process_id: строка, ID связанного процесса
+        :param is_black_box: булево значение, определяющее является ли пул черным ящиком. По умолчанию - False
+        :return: строка, ID созданного пула
+        """
+        pool_id = BpmnDiagramGraph.id_prefix + str(uuid.uuid4())
+        
+        # Инициализация словаря collaboration, если он еще не существует
+        if not self.collaboration:
+            collaboration_id = "Collaboration_" + str(uuid.uuid4())
+            self.collaboration = {consts.Consts.id: collaboration_id, "participants": {}, "messageFlows": {}}
+        
+        # Добавление пула в словарь participants
+        if "participants" not in self.collaboration:
+            self.collaboration["participants"] = {}
+            
+        self.collaboration["participants"][pool_id] = {
+            consts.Consts.id: pool_id,
+            consts.Consts.name: name,
+            consts.Consts.process_ref: process_id,
+            "is_black_box": "true" if is_black_box else "false",
+            consts.Consts.is_horizontal: "true" if is_horizontal else "false",
+            consts.Consts.width: "600",  # Стандартная ширина пула
+            consts.Consts.height: "250",  # Стандартная высота пула
+            consts.Consts.x: "100",      # Начальная X-координата
+            consts.Consts.y: "100"       # Начальная Y-координата
+        }
+        
+        return pool_id
+
+    def add_message_flow_to_diagram(self, source_ref_id, target_ref_id, message_flow_name=""):
+        """
+        Добавляет элемент потока сообщений (messageFlow) в BPMN диаграмму.
+        
+        :param source_ref_id: строка, ID исходного узла
+        :param target_ref_id: строка, ID целевого узла
+        :param message_flow_name: строка, имя потока сообщений. По умолчанию - пустая строка
+        :return: строка, ID созданного потока сообщений
+        """
+        message_flow_id = BpmnDiagramGraph.id_prefix + str(uuid.uuid4())
+        
+        # Инициализация словаря collaboration, если он еще не существует
+        if not self.collaboration:
+            collaboration_id = "Collaboration_" + str(uuid.uuid4())
+            self.collaboration = {consts.Consts.id: collaboration_id, "participants": {}, "messageFlows": {}}
+        
+        # Добавление потока сообщений в словарь messageFlows
+        if "messageFlows" not in self.collaboration:
+            self.collaboration["messageFlows"] = {}
+            
+        self.collaboration["messageFlows"][message_flow_id] = {
+            consts.Consts.id: message_flow_id,
+            consts.Consts.name: message_flow_name,
+            consts.Consts.source_ref: source_ref_id,
+            consts.Consts.target_ref: target_ref_id
+        }
+        
+        # Добавляем поток сообщений как ребро в граф
+        self.diagram_graph.add_edge(source_ref_id, target_ref_id)
+        flow = self.diagram_graph[source_ref_id][target_ref_id]
+        flow[consts.Consts.id] = message_flow_id
+        flow[consts.Consts.name] = message_flow_name
+        flow["message_flow"] = True  # Маркер, что это поток сообщений, а не последовательный поток
+        flow[consts.Consts.source_ref] = source_ref_id
+        flow[consts.Consts.target_ref] = target_ref_id
+        
+        # Добавляем информацию о визуальном представлении потока сообщений
+        source_node = self.diagram_graph.nodes.get(source_ref_id)
+        target_node = self.diagram_graph.nodes.get(target_ref_id)
+        
+        if source_node and target_node:
+            waypoints = [
+                (source_node.get(consts.Consts.x, "100"), source_node.get(consts.Consts.y, "100")),
+                (target_node.get(consts.Consts.x, "100"), target_node.get(consts.Consts.y, "100"))
+            ]
+            self.collaboration["messageFlows"][message_flow_id][consts.Consts.waypoints] = waypoints
+            flow[consts.Consts.waypoints] = waypoints
+            
+        return message_flow_id
+
+

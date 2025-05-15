@@ -3,6 +3,8 @@
 Package with BPMNDiagramGraph - graph representation of BPMN diagram
 """
 import copy
+from collections import deque, defaultdict
+from tqdm import tqdm
 
 import bpmn_python.bpmn_python_consts as consts
 import bpmn_python.grid_cell_class as cell_class
@@ -12,9 +14,22 @@ def generate_layout(bpmn_graph):
     """
     :param bpmn_graph: an instance of BPMNDiagramGraph class.
     """
-    classification = generate_elements_clasification(bpmn_graph)
-    (sorted_nodes_with_classification, backward_flows) = topological_sort(bpmn_graph, classification[0])
-    grid = grid_layout(bpmn_graph, sorted_nodes_with_classification)
+    # classification = generate_elements_clasification(bpmn_graph)
+    with tqdm(total=100, desc="Классификация элементов") as pbar:
+        classification = generate_elements_clasification(bpmn_graph)
+        pbar.update(100)
+
+    # (sorted_nodes_with_classification, backward_flows) = topological_sort(bpmn_graph, classification[0])
+    # (sorted_nodes_with_classification, backward_flows) = optimized_topological_sort(bpmn_graph, classification[0])
+    with tqdm(total=100, desc="Топологическая сортировка") as pbar:
+        (sorted_nodes_with_classification, backward_flows) = optimized_topological_sort(bpmn_graph, classification[0])
+        pbar.update(100)
+
+    # grid = grid_layout(bpmn_graph, sorted_nodes_with_classification)
+    with tqdm(total=100, desc="Создание сетки") as pbar:
+        grid = grid_layout(bpmn_graph, sorted_nodes_with_classification)
+        pbar.update(100)
+
     set_coordinates_for_nodes(bpmn_graph, grid)
     set_flows_waypoints(bpmn_graph)
 
@@ -146,6 +161,8 @@ def topological_sort(bpmn_graph, nodes_with_classification):
     """
     :return:
     """
+    # print('topological_sort')
+    return optimized_topological_sort(bpmn_graph, nodes_with_classification)
     node_param_name = "node"
     classification_param_name = "classification"
 
@@ -194,6 +211,8 @@ def topological_sort(bpmn_graph, nodes_with_classification):
                         incoming_list.remove(flow_id)
 
                         flow = bpmn_graph.get_flow_by_id(flow_id)
+                        if flow is None or len(flow) < 2 and flow[2] is None:
+                            continue
 
                         source_id = flow[2][consts.Consts.source_ref]
                         source = next(tmp_node[node_param_name]
@@ -382,9 +401,14 @@ def set_coordinates_for_nodes(bpmn_graph, grid):
 
     nodes = bpmn_graph.get_nodes()
     for node in nodes:
-        cell = next(grid_cell for grid_cell in grid if grid_cell.node_id == node[0])
-        node[1][consts.Consts.x] = str(cell.col * 150 + 50)
-        node[1][consts.Consts.y] = str(cell.row * 100 + 50)
+        try:
+            cell = next(grid_cell for grid_cell in grid if grid_cell.node_id == node[0])
+            node[1][consts.Consts.x] = str(cell.col * 150 + 50)
+            node[1][consts.Consts.y] = str(cell.row * 100 + 50)
+        except StopIteration:
+            print(f"Не найдена ячейка для узла {node[0]} типа {node[1][consts.Consts.type]}. Используются координаты по умолчанию.")
+            node[1][consts.Consts.x] = "100"
+            node[1][consts.Consts.y] = "100"
 
 
 def set_flows_waypoints(bpmn_graph):
@@ -433,3 +457,76 @@ def set_flows_waypoints(bpmn_graph):
                                                  str(int(source_node[1][consts.Consts.y]) + source_rh)),
                                                 (str(int(target_node[1][consts.Consts.x])),
                                                  str(int(target_node[1][consts.Consts.y]) + target_rh))]
+
+def optimized_topological_sort(bpmn_graph, nodes_with_classification):
+    """
+    Оптимизированная топологическая сортировка с использованием подхода in-degree и BFS
+    """
+    from collections import deque, defaultdict
+    
+    node_param_name = "node"
+    
+    # Создаем словарь для быстрого доступа к узлам по ID
+    node_dict = {node[node_param_name][0]: node for node in nodes_with_classification}
+    
+    # Инициализируем счетчики входящих ребер и граф смежности
+    in_degree = defaultdict(int)
+    graph = defaultdict(list)
+    
+    # Строим граф смежности и подсчитываем входящие ребра
+    for node in nodes_with_classification:
+        node_id = node[node_param_name][0]
+        in_degree[node_id] = len(node[node_param_name][1][consts.Consts.incoming_flow])
+        
+        # Добавляем исходящие ребра
+        for flow_id in node[node_param_name][1][consts.Consts.outgoing_flow]:
+            flow = bpmn_graph.get_flow_by_id(flow_id)
+            if flow and len(flow) > 2 and flow[2] is not None:
+                target_id = flow[2][consts.Consts.target_ref]
+                graph[node_id].append((target_id, flow_id))
+    
+    # Находим узлы без входящих ребер (источники)
+    queue = deque([node_id for node_id, degree in in_degree.items() if degree == 0])
+    
+    sorted_nodes = []
+    backward_flows = []
+    
+    # BFS для топологической сортировки
+    while queue:
+        node_id = queue.popleft()
+        sorted_nodes.append(node_dict[node_id])
+        
+        # Обрабатываем все исходящие ребра
+        for target_id, flow_id in graph[node_id]:
+            in_degree[target_id] -= 1
+            if in_degree[target_id] == 0:
+                queue.append(target_id)
+    
+    # Обработка циклов в графе
+    if len(sorted_nodes) < len(nodes_with_classification):
+        # Находим точки входа в циклы
+        for node_id in [n[node_param_name][0] for n in nodes_with_classification 
+                        if n not in sorted_nodes]:
+            for flow_id in node_dict[node_id][node_param_name][1][consts.Consts.incoming_flow]:
+                flow = bpmn_graph.get_flow_by_id(flow_id)
+                if flow and len(flow) > 2 and flow[2] is not None:
+                    source_id = flow[2][consts.Consts.source_ref]
+                    if node_dict[source_id] in sorted_nodes:
+                        backward_flows.append(flow)
+                        in_degree[node_id] -= 1
+                        if in_degree[node_id] == 0:
+                            queue.append(node_id)
+        
+        # Продолжаем сортировку после разрыва циклов
+        while queue:
+            node_id = queue.popleft()
+            sorted_nodes.append(node_dict[node_id])
+            
+            for target_id, flow_id in graph[node_id]:
+                if target_id in in_degree:  # Только для еще не обработанных узлов
+                    in_degree[target_id] -= 1
+                    if in_degree[target_id] == 0:
+                        queue.append(target_id)
+    
+    return sorted_nodes, backward_flows
+
